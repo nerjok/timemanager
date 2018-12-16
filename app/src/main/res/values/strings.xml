@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">WorkTimer</string>
+    <string name="next_window">Seccont activity</string>
+    <string name="first_activity">Main Activity</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
