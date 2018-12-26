@@ -4,5 +4,6 @@
     <string name="first_activity">Main Activity</string>
 
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="hello_blank_fragment">Hello blank fragment fragment ad edit</string>
+    <string name="task_name">Task name</string>
 </resources>

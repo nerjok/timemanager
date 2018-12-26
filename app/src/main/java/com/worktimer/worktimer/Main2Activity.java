@@ -3,6 +3,7 @@ package com.worktimer.worktimer;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.net.Uri;
 import android.provider.BaseColumns;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -14,6 +15,9 @@ import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -21,6 +25,7 @@ import android.widget.LinearLayout;
 import java.security.InvalidParameterException;
 
 public class Main2Activity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
+AddEditActivityFragment.OnFragmentInteractionListener,
     View.OnClickListener {
 
     private static final int LOADER_ID = 1;
@@ -33,6 +38,7 @@ public class Main2Activity extends AppCompatActivity implements LoaderManager.Lo
     private Bundle mArgs = new Bundle();
 
     CursorRecyclerViewAdapter adapter;
+    private boolean mTwoPane = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,8 +50,8 @@ public class Main2Activity extends AppCompatActivity implements LoaderManager.Lo
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        //fragmentTransaction.commit();
         //View mainFragment = findViewById(R.id.fragment);
-
 
                    LinearLayout fragContainer = (LinearLayout) findViewById(R.id.fragment);
                    LinearLayout ll = new LinearLayout(this);
@@ -56,10 +62,14 @@ public class Main2Activity extends AppCompatActivity implements LoaderManager.Lo
         fragmentTransaction.add(ll.getId(), TestFragment.newInstance("one", "two"),"gtgt").commit();
         fragContainer.addView(ll);
 
+
+
+
+
         button.setOnClickListener(this);
 
-        //if (adapter == null)
-            //adapter = new CursorRecyclerViewAdapter([], this);
+        if (adapter == null)
+            adapter = new CursorRecyclerViewAdapter(null, null);
 
         
         Log.d(TAG, "onCreate: Mainactivity2");
@@ -83,6 +93,8 @@ public class Main2Activity extends AppCompatActivity implements LoaderManager.Lo
 
         android.support.v4.app.LoaderManager.getInstance(this).restartLoader(LOADER_ID, mArgs, this);
     }
+
+
 
     @NonNull
     @Override
@@ -119,17 +131,99 @@ public class Main2Activity extends AppCompatActivity implements LoaderManager.Lo
         }
 
         @Override
-        public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
-            Log.d(TAG, "onLoadFinished: ");
+        public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+            adapter.swapCursor(data);
+            int count = adapter.getItemCount();
+            Log.d(TAG, "onLoadFinished: "+ data);
         }
 
         @Override
         public void onLoaderReset(@NonNull Loader<Cursor> loader) {
             Log.d(TAG, "onLoaderReset: ");
+            adapter.swapCursor(null);
         }
 
         @Override
         public void onPointerCaptureChanged(boolean hasCapture) {
             Log.d(TAG, "onPointerCaptureChanged: ");
         }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        //return super.onCreateOptionsMenu(menu);
+
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu2, menu);
+        return true;
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+
+        switch (id) {
+            case R.id.add_task:
+                taskEdit(null);
+                Log.d(TAG, "onOptionsItemSelected: " + id);
+                break;
+             default:
+                 Log.d(TAG, "onOptionsItemSelected: default");
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    public void taskEdit(Worktime task) {
+
+        AddEditActivityFragment fragment = new AddEditActivityFragment();
+
+        Bundle arguments = new Bundle();
+        //arguments.putSerializable(Worktime.class.getSimpleName(), task);
+        //fragment.setArguments(arguments);
+
+        Log.d(TAG, "taskEditRequest: twoPaneMode");
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.task_details_container, fragment)
+                .commit();
+
+
+        if(!mTwoPane) {
+            Log.d(TAG, "taskEditRequest: in single-pane mode (phone)");
+            // Hide the left hand fragment and show the right hand frame
+            View mainFragment = findViewById(R.id.fragment);
+            View addEditLayout = findViewById(R.id.task_details_container);
+            mainFragment.setVisibility(View.GONE);
+            addEditLayout.setVisibility(View.VISIBLE);
+        }
+        Log.d(TAG, "Exiting taskEditRequest");
+
+    }
+
+    @Override
+    public void onFragmentInteraction(Uri uri) {
+        Log.d(TAG, "onFragmentInteraction: kuku");
+
+        AddEditActivityFragment fragment = new AddEditActivityFragment();
+
+        Bundle arguments = new Bundle();
+        //arguments.putSerializable(Worktime.class.getSimpleName(), task);
+        //fragment.setArguments(arguments);
+
+        Log.d(TAG, "taskEditRequest: twoPaneMode");
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.task_details_container, fragment)
+                .commit();
+
+
+        if(!mTwoPane) {
+            Log.d(TAG, "taskEditRequest: in single-pane mode (phone)");
+            // Hide the left hand fragment and show the right hand frame
+            View mainFragment = findViewById(R.id.fragment);
+            View addEditLayout = findViewById(R.id.task_details_container);
+            mainFragment.setVisibility(View.VISIBLE);
+            addEditLayout.setVisibility(View.GONE);
+            android.support.v4.app.LoaderManager.getInstance(this).restartLoader(LOADER_ID, mArgs, this);
+
+        }
+    }
+}

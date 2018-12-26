@@ -15,7 +15,7 @@ public class AppProvider extends ContentProvider {
 
     private static final String TAG = "AppProvider";
 
-    static final String CONTENT_AUTHORITY = "com.worktimer.provider";
+    static final String CONTENT_AUTHORITY = "com.worktimer.worktimer.provider";
     public static final Uri CONTENT_AUTHORITY_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
     private AppDatabase appDatabase;
