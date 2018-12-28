@@ -21,11 +21,14 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.support.v7.app.AlertDialog;
+
 
 import java.security.InvalidParameterException;
 
 public class Main2Activity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
-AddEditActivityFragment.OnFragmentInteractionListener,
+        CursorRecyclerViewAdapter.OnTaskClickListener,
+    AddEditActivityFragment.OnFragmentInteractionListener,
     View.OnClickListener {
 
     private static final int LOADER_ID = 1;
@@ -69,7 +72,7 @@ AddEditActivityFragment.OnFragmentInteractionListener,
         button.setOnClickListener(this);
 
         if (adapter == null)
-            adapter = new CursorRecyclerViewAdapter(null, null);
+            adapter = new CursorRecyclerViewAdapter(null, this);
 
         
         Log.d(TAG, "onCreate: Mainactivity2");
@@ -197,6 +200,41 @@ AddEditActivityFragment.OnFragmentInteractionListener,
         }
         Log.d(TAG, "Exiting taskEditRequest");
 
+    }
+
+    @Override
+    public void onEditClick(Worktime task) {
+        Log.d(TAG, "onEditClick: ");
+
+        AddEditActivityFragment fragment = new AddEditActivityFragment();
+
+        Bundle arguments = new Bundle();
+        arguments.putSerializable(Worktime.class.getSimpleName(), task);
+        fragment.setArguments(arguments);
+
+        Log.d(TAG, "taskEditRequest: twoPaneMode");
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.task_details_container, fragment)
+                .commit();
+
+
+        if(!mTwoPane) {
+            Log.d(TAG, "taskEditRequest: in single-pane mode (phone)");
+            // Hide the left hand fragment and show the right hand frame
+            View mainFragment = findViewById(R.id.fragment);
+            View addEditLayout = findViewById(R.id.task_details_container);
+            mainFragment.setVisibility(View.GONE);
+            addEditLayout.setVisibility(View.VISIBLE);
+        }
+    }
+
+    @Override
+    public void onDeleteClick(@NonNull Worktime workTime) {
+        Log.d(TAG, "onDeleteClick: ");
+
+        Long taskId = workTime.getId();
+        if(BuildConfig.DEBUG && taskId == 0) throw new AssertionError("Task ID is zero");
+        getContentResolver().delete(WorkTimer.buildTaskUri(taskId), null, null);
     }
 
     @Override

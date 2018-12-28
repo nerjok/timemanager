@@ -1,37 +1,41 @@
 package com.worktimer.worktimer;
 
 import android.database.Cursor;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 public class CursorRecyclerViewAdapter extends RecyclerView.Adapter<CursorRecyclerViewAdapter.MyViewHolder>{
 
-    private String[] mDataset;
     private OnTaskClickListener mListener;
     public static final String TAG = "CursorRecyclerViewAdapt";
     private Cursor mCursor;
 
     interface OnTaskClickListener {
-        void onEditClick(WorkTimer workTimer);
+        void onEditClick(Worktime workTime);
+        void onDeleteClick(@NonNull Worktime workTime);
     }
-    // Provide a reference to the views for each data item
-    // Complex data items may need more than one view per item, and
-    // you provide access to all the views for a data item in a view holder
+
+
     public static class MyViewHolder extends RecyclerView.ViewHolder {
-        // each data item is just a string in this case
         public View mTextView;
         public TextView taskItem;
         TextView text2;
+        ImageButton editButton;
+        ImageButton deleteButton;
+
         public MyViewHolder(View v) {
             super(v);
             mTextView = v;
             this.taskItem = v.findViewById(R.id.taskItem);
             this.text2 = v.findViewById(R.id.text2);
+            this.editButton = v.findViewById(R.id.edit_task);
+            this.deleteButton = v.findViewById(R.id.remove_task);
         }
     }
 
@@ -47,14 +51,9 @@ public class CursorRecyclerViewAdapter extends RecyclerView.Adapter<CursorRecycl
     public CursorRecyclerViewAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent,
                                                      int viewType) {
         Log.d(TAG, "onCreateViewHolder: ");
-        // create a new view
         View v =  LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.task_item, parent, false);
-/*
-        LinearLayout ll = (LinearLayout) LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.task_item, parent, true); // get the parent layout view
-        TextView tv = (TextView) ll.findViewById(R.id.taskItem);
-*/
+
         MyViewHolder vh = new MyViewHolder(v);
         return vh;
     }
@@ -65,7 +64,7 @@ public class CursorRecyclerViewAdapter extends RecyclerView.Adapter<CursorRecycl
 
         if((mCursor == null) || (mCursor.getCount() == 0)) {
             Log.d(TAG, "onBindViewHolder: count is zero");
-        } else if ( mCursor != null /*&& mCursor.moveToFirst()/* mCursor.getCount() > 1*/ ){
+        } else if (mCursor != null){
             if(!mCursor.moveToPosition(position)) {
                 throw new IllegalStateException("Couldn't move cursor to position " + position);
             }
@@ -73,7 +72,31 @@ public class CursorRecyclerViewAdapter extends RecyclerView.Adapter<CursorRecycl
                     mCursor.getString(mCursor.getColumnIndex(WorkTimer.Columns.TASK_NAME)),
                     mCursor.getString(mCursor.getColumnIndex(WorkTimer.Columns.TASK_DESCRIPTION)),
                     mCursor.getInt(mCursor.getColumnIndex(WorkTimer.Columns.TASKS_SORTORDER)));
+            View.OnClickListener buttonListener = new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Log.d(TAG, "onClick: starts");
+                    switch(view.getId()) {
+                        case R.id.edit_task:
+                            if(mListener != null) {
+                                Log.d(TAG, "onClick: edit");
+                                mListener.onEditClick(workTime);
+                            }
+                            break;
+                        case R.id.remove_task:
+                            if(mListener != null) {
+                                mListener.onDeleteClick(workTime);
+                            }
+                            break;
+                        default:
+                            Log.d(TAG, "onClick: found unexpected button id");
+                    }
 
+                }
+            };
+
+            holder.editButton.setOnClickListener(buttonListener);
+            holder.deleteButton.setOnClickListener(buttonListener);
             holder.taskItem.setText(workTime.getName());
             holder.text2.setText(workTime.getDescription());
         }

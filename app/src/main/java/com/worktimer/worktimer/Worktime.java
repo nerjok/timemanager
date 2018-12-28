@@ -1,6 +1,8 @@
 package com.worktimer.worktimer;
 
-public class Worktime {
+import java.io.Serializable;
+
+public class Worktime implements Serializable {
 
     public static final long serialVersionUID = 20161120L;
 

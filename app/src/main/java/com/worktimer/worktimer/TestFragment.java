@@ -15,12 +15,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import java.security.InvalidParameterException;
 
 public class TestFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>,
-        View.OnClickListener {
+        View.OnClickListener,
+        CursorRecyclerViewAdapter.OnTaskClickListener
+{
 
     private CursorRecyclerViewAdapter mAdapter; // add adapter reference
     public static final String TAG = "TestFragment";
@@ -61,6 +62,25 @@ public class TestFragment extends Fragment implements LoaderManager.LoaderCallba
 
             default:
                 throw new InvalidParameterException(TAG + ".onCreateLoader called with invalid loader id " + id);
+        }
+    }
+
+    @Override
+    public void onEditClick(Worktime workTime) {
+        Log.d(TAG, "onEditClick: ");
+        CursorRecyclerViewAdapter.OnTaskClickListener listener = (CursorRecyclerViewAdapter.OnTaskClickListener) getActivity();
+        if (listener != null) {
+            listener.onEditClick(workTime);
+        }
+
+    }
+
+    @Override
+    public void onDeleteClick(Worktime task) {
+        Log.d(TAG, "onDeleteClick: ");
+        CursorRecyclerViewAdapter.OnTaskClickListener listener = (CursorRecyclerViewAdapter.OnTaskClickListener) getActivity();
+        if (listener != null) {
+            listener.onDeleteClick(task);
         }
     }
 
@@ -116,7 +136,7 @@ public class TestFragment extends Fragment implements LoaderManager.LoaderCallba
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         if (mAdapter == null) {
-            mAdapter = new CursorRecyclerViewAdapter(null, null);
+            mAdapter = new CursorRecyclerViewAdapter(null, this);
         }
         recyclerView.setAdapter(mAdapter);
 

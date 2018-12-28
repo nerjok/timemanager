@@ -123,11 +123,71 @@ public class AppProvider extends ContentProvider {
 
     @Override
     public int update(@NonNull Uri uri, ContentValues values, String selection, String[] selectionArgs) {
-        return 0;
-    }
+
+        final int match = sUriMatcher.match(uri);
+        final SQLiteDatabase db;
+        int count;
+        String selectionCriteria;
+
+
+        switch (match) {
+            case TASKS_ID:
+                db = appDatabase.getWritableDatabase();
+                long taskId = WorkTimer.getTaskId(uri);
+                selectionCriteria = WorkTimer.Columns._ID + " = " + taskId;
+
+                if((selection != null) && (selection.length()>0)) {
+                    selectionCriteria += " AND (" + selection + ")";
+                }
+                count = db.update(WorkTimer.TABLE_NAME, values, selectionCriteria, selectionArgs);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown uri: " + uri);
+        }
+
+        if(count > 0) {
+            // something was deleted
+            Log.d(TAG, "update: Setting notifyChange with " + uri);
+            //noinspection ConstantConditions
+            getContext().getContentResolver().notifyChange(uri, null);
+        } else {
+            Log.d(TAG, "update: nothing deleted");
+        }
+
+        Log.d(TAG, "Exiting update, returning " + count);
+        return count;    }
 
     @Override
-    public int delete( @NonNull Uri uri, @Nullable String s, @Nullable String[] strings) {
-        return 0;
+    public int delete( @NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
+
+        final int match = sUriMatcher.match(uri);
+        SQLiteDatabase db;
+        String selectionCriteria;
+        int count;
+        switch (match) {
+            case TASKS_ID:
+                db = appDatabase.getWritableDatabase();
+                long taskId = WorkTimer.getTaskId(uri);
+                selectionCriteria = WorkTimer.Columns._ID + " = " + taskId;
+
+                if((selection != null) && (selection.length()>0)) {
+                    selectionCriteria += " AND (" + selection + ")";
+                }
+                count = db.delete(WorkTimer.TABLE_NAME, selectionCriteria, selectionArgs);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown uri: " + uri);
+        }
+        if(count > 0) {
+            // something was deleted
+            Log.d(TAG, "delete: Setting notifyChange with " + uri);
+            //noinspection ConstantConditions
+            getContext().getContentResolver().notifyChange(uri, null);
+        } else {
+            Log.d(TAG, "delete: nothing deleted");
+        }
+
+        Log.d(TAG, "Exiting update, returning " + count);
+        return count;
     }
 }

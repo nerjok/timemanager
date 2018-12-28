@@ -36,6 +36,8 @@ public class AddEditActivityFragment extends Fragment /* implements View.OnClick
     private Bundle mArgs = new Bundle();
     private static final int LOADER_ID = 1;
 
+    private enum FragmentEditMode { EDIT, ADD }
+    private FragmentEditMode mMode;
 
     EditText name;
     EditText description;
@@ -88,6 +90,29 @@ public class AddEditActivityFragment extends Fragment /* implements View.OnClick
         description = view.findViewById(R.id.addedit_description);
         sortOrd = view.findViewById(R.id.addedit_sortorder);
 
+        Bundle arguments = getArguments();
+
+        final Worktime task;
+        if(arguments != null) {
+            Log.d(TAG, "onCreateView: retrieving task details.");
+
+            task = (Worktime) arguments.getSerializable(Worktime.class.getSimpleName());
+            if(task != null) {
+                Log.d(TAG, "onCreateView: Task details found, editing...");
+                name.setText(task.getName());
+                description.setText(task.getDescription());
+                sortOrd.setText(Integer.toString(task.getSortOrder()));
+                mMode = FragmentEditMode.EDIT;
+            } else {
+                // No task, so we must be adding a new task, and not editing an  existing one
+                mMode = FragmentEditMode.ADD;
+            }
+        } else {
+            task = null;
+            Log.d(TAG, "onCreateView: No arguments, adding new record");
+            mMode = FragmentEditMode.ADD;
+        }
+
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -99,8 +124,16 @@ public class AddEditActivityFragment extends Fragment /* implements View.OnClick
                 values.put(WorkTimer.Columns.TASK_NAME, name.getText().toString());
                 values.put(WorkTimer.Columns.TASK_DESCRIPTION, description.getText().toString());
                 values.put(WorkTimer.Columns.TASKS_SORTORDER, 1);
-                contentResolver.insert(WorkTimer.CONTENT_URI, values);
 
+                switch (mMode) {
+                    case ADD:
+                        contentResolver.insert(WorkTimer.CONTENT_URI, values);
+                        break;
+                    case EDIT:
+                        contentResolver.update(WorkTimer.buildTaskUri(task.getId()), values, null, null);
+                        break;
+
+                }
                 if(mListener != null) {
                     mListener.onFragmentInteraction(null);
                 }
