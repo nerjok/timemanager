@@ -1,12 +1,15 @@
 package com.worktimer.worktimer;
 
 import android.Manifest;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.IBinder;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -31,6 +34,27 @@ public class MainActivity extends AppCompatActivity {
     private AlertDialog mDialog = null;
     public AppDatabase mydb;
 
+    /**
+     * Test backgound services
+     */
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            String name = className.getClassName();
+            if (name.endsWith("BackgroundService")) {
+                Log.d(TAG, "onServiceConnected: ");
+                //gpsService = ((BackgroundService.LocationServiceBinder) service).getService();
+                //btnStartTracking.setEnabled(true);
+                //txtStatus.setText("GPS Ready");
+            }
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            if (className.getClassName().equals("BackgroundService")) {
+                Log.d(TAG, "onServiceDisconnected: ");
+                //gpsService = null;
+            }
+        }
+    };
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,6 +65,15 @@ public class MainActivity extends AppCompatActivity {
         mContext=this;
         locationManager=(LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
 
+
+        /*
+        Backgound gps
+         */
+        final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
+       // this.getApplication().startService(intent);
+        this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+/* endtest*/
+
         if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
 
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
@@ -48,8 +81,6 @@ public class MainActivity extends AppCompatActivity {
                         new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                         10);
             }
-            // The ACCESS_FINE_LOCATION is denied, then I request it and manage the result in
-            // onRequestPermissionsResult() using the constant MY_PERMISSION_ACCESS_FINE_LOCATION
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
                 ActivityCompat.requestPermissions(this,
                         new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
