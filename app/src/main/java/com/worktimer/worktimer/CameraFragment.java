@@ -8,6 +8,7 @@ import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -35,11 +36,13 @@ import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import java.io.File;
@@ -61,7 +64,10 @@ import java.util.List;
  * Use the {@link CameraFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class CameraFragment extends Fragment implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback{
+public class CameraFragment extends Fragment implements
+        View.OnClickListener,
+        View.OnTouchListener,
+        ActivityCompat.OnRequestPermissionsResultCallback{
     private static final String TAG = "CameraFragment";
 
     // TODO: Rename and change types of parameters
@@ -89,8 +95,23 @@ public class CameraFragment extends Fragment implements View.OnClickListener, Ac
     protected CameraDevice cameraDevice;
     protected CaptureRequest.Builder captureRequestBuilder;
     protected CameraCaptureSession cameraCaptureSessions;
+    protected CameraCharacteristics cameraCharacteristics;
+    public float finger_spacing = 0;
+
+
+    protected Rect zoom;
+    public int zoom_level = 1;
+
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
+
+
+    public static final String CAMERA_FRONT = "1";
+    public static final String CAMERA_BACK = "0";
+
+    //private String cameraId = CAMERA_BACK;
+    private boolean isFlashSupported;
+    private boolean isTorchOn;
 
     public CameraFragment() {
         // Required empty public constructor
@@ -123,6 +144,7 @@ public class CameraFragment extends Fragment implements View.OnClickListener, Ac
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
 
+
         return inflater.inflate(R.layout.fragment_camera, container, false);
     }
 
@@ -133,7 +155,17 @@ public class CameraFragment extends Fragment implements View.OnClickListener, Ac
         textureView = (TextureView) view.findViewById(R.id.camera_texture);
         textureView.setSurfaceTextureListener(textureListener);
         view.findViewById(R.id.btn_takepicture).setOnClickListener(this);
+        textureView.setOnTouchListener(this);
+        Button flashButton = (Button) view.findViewById(R.id.button_flash2);
+        // Listener for Flash on/off button
+        flashButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchFlash();
+            }
+        });
     }
+
 
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
@@ -175,6 +207,10 @@ public class CameraFragment extends Fragment implements View.OnClickListener, Ac
                 ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
                 return;
             }*/
+            Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+            isFlashSupported = available == null ? false : available;
+
+            setupFlashButton();
 
             manager.openCamera(cameraId, stateCallback, null);
         } catch (CameraAccessException e) {
@@ -415,8 +451,12 @@ public class CameraFragment extends Fragment implements View.OnClickListener, Ac
                     if (null == cameraDevice) {
                         return;
                     }
+
+                    Log.d(TAG, "onConfigured: ");
                     // When the session is ready, we start displaying the preview.
                     cameraCaptureSessions = cameraCaptureSession;
+
+                    
                     updatePreview();
                 }
                 @Override
@@ -433,8 +473,13 @@ public class CameraFragment extends Fragment implements View.OnClickListener, Ac
         if(null == cameraDevice) {
             Log.e(TAG, "updatePreview error, return");
         }
-        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        //captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+
+
+
         try {
+        Log.d(TAG, "updatePreview: ");
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -497,33 +542,129 @@ public class CameraFragment extends Fragment implements View.OnClickListener, Ac
             e.printStackTrace();
         }
     }
-    /*
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
+    public boolean onTouch(View v, MotionEvent event) {
+        try {
+            Activity activity = getActivity();
+            CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            float maxzoom = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM))*10;
+
+            Rect m = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+            int action = event.getAction();
+            float current_finger_spacing;
+
+            if (event.getPointerCount() > 1) {
+                // Multi touch logic
+                current_finger_spacing = getFingerSpacing(event);
+                if(finger_spacing != 0){
+                    if(current_finger_spacing > finger_spacing && maxzoom > zoom_level){
+                        zoom_level++;
+                    } else if (current_finger_spacing < finger_spacing && zoom_level > 1){
+                        zoom_level--;
+                    }
+                    int minW = (int) (m.width() / maxzoom);
+                    int minH = (int) (m.height() / maxzoom);
+                    int difW = m.width() - minW;
+                    int difH = m.height() - minH;
+                    int cropW = difW /100 *(int)zoom_level;
+                    int cropH = difH /100 *(int)zoom_level;
+                    cropW -= cropW & 3;
+                    cropH -= cropH & 3;
+                    zoom = new Rect(cropW, cropH, m.width() - cropW, m.height() - cropH);
+                    captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+                }
+                finger_spacing = current_finger_spacing;
+            } else{
+                if (action == MotionEvent.ACTION_UP) {
+                    //single touch logic
+                    if (zoom_level >= maxzoom) {
+                        zoom_level--;
+                    } else
+                        zoom_level++;
+                    Log.d(TAG, "onTouch: single event" + zoom_level);
+
+                    int minW = (int) (m.width() / maxzoom);
+                    int minH = (int) (m.height() / maxzoom);
+                    int difW = m.width() - minW;
+                    int difH = m.height() - minH;
+                    int cropW = difW /100 *(int)zoom_level;
+                    int cropH = difH /100 *(int)zoom_level;
+                    cropW -= cropW & 3;
+                    cropH -= cropH & 3;
+                    zoom = new Rect(cropW, cropH, m.width() - cropW, m.height() - cropH);
+                    captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+                }
+            }
+
+            try {
+                cameraCaptureSessions
+                        .setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            } catch (NullPointerException ex) {
+                ex.printStackTrace();
+            }
+        } catch (CameraAccessException e) {
+            throw new RuntimeException("can not access camera.", e);
         }
+        return true;
     }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }
-    */
 
+    //Determine the space between the first two fingers
+    @SuppressWarnings("deprecation")
+    private float getFingerSpacing(MotionEvent event) {
+        float x = event.getX(0) - event.getX(1);
+        float y = event.getY(0) - event.getY(1);
+        return (float) Math.sqrt(x * x + y * y);
+    }
     public interface OnFragmentInteractionListener {
         void onFragmentInteraction(Uri uri);
+    }
+
+
+    /**
+     * Flash settings
+     */
+    public void switchFlash() {
+        try {
+            Log.d(TAG, "switchFlash: ");
+            if (cameraId.equals(CAMERA_BACK)) {
+                if (isFlashSupported) {
+                    Button flashButton = (Button) getView().findViewById(R.id.button_flash2);
+                    if (isTorchOn) {
+                        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+                        cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+                        //flashButton.setImageResource(R.drawable.ic_flash_off);
+                        isTorchOn = false;
+                    } else {
+                        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+                        cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+                        //flashButton.setImageResource(R.drawable.ic_flash_on);
+                        isTorchOn = true;
+                    }
+                }
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setupFlashButton() {
+        if (cameraId.equals(CAMERA_BACK) && isFlashSupported) {
+            Button flashButton = (Button) getView().findViewById(R.id.button_flash2);
+            flashButton.setVisibility(View.VISIBLE);
+
+            if (isTorchOn) {
+                //flashButton.setImageResource(R.drawable.ic_flash_off);
+            } else {
+                //flashButton.setImageResource(R.drawable.ic_flash_on);
+            }
+
+        } else {
+            //flashButton.setVisibility(View.GONE);
+        }
     }
 }
