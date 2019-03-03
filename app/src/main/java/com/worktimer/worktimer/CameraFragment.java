@@ -112,6 +112,7 @@ public class CameraFragment extends Fragment implements
     //private String cameraId = CAMERA_BACK;
     private boolean isFlashSupported;
     private boolean isTorchOn;
+    public String flashMode;
 
     public CameraFragment() {
         // Required empty public constructor
@@ -156,16 +157,27 @@ public class CameraFragment extends Fragment implements
         textureView.setSurfaceTextureListener(textureListener);
         view.findViewById(R.id.btn_takepicture).setOnClickListener(this);
         textureView.setOnTouchListener(this);
-        Button flashButton = (Button) view.findViewById(R.id.button_flash2);
-        // Listener for Flash on/off button
+        ImageButton flashButton = (ImageButton) view.findViewById(R.id.button_flash3);
         flashButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 switchFlash();
             }
         });
+
+        Button zoom_in = (Button) view.findViewById(R.id.zoom_in);
+        Button zoom_out = (Button) view.findViewById(R.id.zoom_out);
+        zoom_in.setOnTouchListener(this);
+        zoom_out.setOnTouchListener(this);
+
     }
 
+    public void zoom_in() {
+    }
+
+    public void zoom_out() {
+
+    }
 
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
@@ -202,11 +214,7 @@ public class CameraFragment extends Fragment implements
                 return;
             }
             configureTransform(width, height);
-/*
-            if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
-                return;
-            }*/
+
             Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
             isFlashSupported = available == null ? false : available;
 
@@ -335,6 +343,7 @@ public class CameraFragment extends Fragment implements
     protected void takePicture() {
         if(null == cameraDevice) {
             Log.e(TAG, "cameraDevice is null");
+            openCamera(textureView.getWidth(), textureView.getHeight());
             return;
         }
         CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
@@ -545,6 +554,10 @@ public class CameraFragment extends Fragment implements
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
+        if(null == cameraDevice) {
+            Log.e(TAG, "cameraDevice is null");
+            return false;
+        }
         try {
             Activity activity = getActivity();
             CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
@@ -577,12 +590,19 @@ public class CameraFragment extends Fragment implements
                 }
                 finger_spacing = current_finger_spacing;
             } else{
+                Log.d(TAG, "onTouch: " + v.getId() + v);
                 if (action == MotionEvent.ACTION_UP) {
-                    //single touch logic
-                    if (zoom_level >= maxzoom) {
-                        zoom_level--;
-                    } else
+                if (v.getId() == R.id.zoom_in) {
+                    Log.d(TAG, "onTouch: zooming in");
+                    if (zoom_level < maxzoom)
                         zoom_level++;
+                } else if (v.getId() == R.id.zoom_out) {
+                    Log.d(TAG, "onTouch: zooming out");
+                    if (zoom_level > 0)
+                      zoom_level--;
+                }
+
+
                     Log.d(TAG, "onTouch: single event" + zoom_level);
 
                     int minW = (int) (m.width() / maxzoom);
@@ -596,6 +616,8 @@ public class CameraFragment extends Fragment implements
                     zoom = new Rect(cropW, cropH, m.width() - cropW, m.height() - cropH);
                     captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
                 }
+
+
             }
 
             try {
@@ -633,17 +655,27 @@ public class CameraFragment extends Fragment implements
             Log.d(TAG, "switchFlash: ");
             if (cameraId.equals(CAMERA_BACK)) {
                 if (isFlashSupported) {
-                    Button flashButton = (Button) getView().findViewById(R.id.button_flash2);
-                    if (isTorchOn) {
+                    ImageButton flashButton = (ImageButton) getView().findViewById(R.id.button_flash3);
+                    if (flashMode == "torch") {
                         captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
                         cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, null);
-                        //flashButton.setImageResource(R.drawable.ic_flash_off);
-                        isTorchOn = false;
+                        flashButton.setImageResource(R.drawable.ic_flash_off);
+                        flashMode = "off";
+                    } else if (flashMode == "off") {
+                        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+                        cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+                        flashButton.setImageResource(R.drawable.ic_flash_on);
+                        flashMode = "on";
+                    } else if (flashMode == "on") {
+                        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+                        cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+                        flashButton.setImageResource(R.drawable.ic_flash_auto);
+                        flashMode = "auto";
                     } else {
                         captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
                         cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, null);
-                        //flashButton.setImageResource(R.drawable.ic_flash_on);
-                        isTorchOn = true;
+                        flashButton.setImageResource(R.drawable.ic_flash_torch);
+                        flashMode = "torch";
                     }
                 }
             }
@@ -654,14 +686,14 @@ public class CameraFragment extends Fragment implements
 
     public void setupFlashButton() {
         if (cameraId.equals(CAMERA_BACK) && isFlashSupported) {
-            Button flashButton = (Button) getView().findViewById(R.id.button_flash2);
+            ImageButton flashButton = (ImageButton) getView().findViewById(R.id.button_flash3);
             flashButton.setVisibility(View.VISIBLE);
 
-            if (isTorchOn) {
-                //flashButton.setImageResource(R.drawable.ic_flash_off);
-            } else {
-                //flashButton.setImageResource(R.drawable.ic_flash_on);
-            }
+            //if (isTorchOn) {
+                flashButton.setImageResource(R.drawable.ic_flash_off);
+            /*} else {
+                flashButton.setImageResource(R.drawable.ic_flash_on);
+            }*/
 
         } else {
             //flashButton.setVisibility(View.GONE);

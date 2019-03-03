@@ -1,33 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="com.worktimer.worktimer.AndroidCameraApi">
+
     <TextureView
         android:id="@+id/camera_texture"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/btn_takepicture"
-        android:layout_alignParentTop="true"/>
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="0dp" />
+
 
     <Button
         android:id="@+id/btn_takepicture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        android:text="@string/take_picture" />
+        android:layout_alignBottom="@+id/camera_texture"
+        android:layout_marginBottom="25dp"
+        android:alpha="0.25"
+        android:background="@drawable/rounded_button"
+        android:color="#55000000"
+        android:padding="10dp"
+        android:text="@string/take_picture"
+        android:layout_centerHorizontal="true"
+        android:textColor="#fff" />
 
-
-
-    <Button
-        android:id="@+id/button_flash2"
+    <ImageButton
+        android:id="@+id/button_flash3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:layout_marginEnd="323dp"
-        android:text="Button" />
+        android:layout_marginTop="158dp"
+        android:layout_marginEnd="15dp"
+        android:background="@drawable/rounded_button"
+        android:cropToPadding="false"
+        android:padding="10dp"
+        android:alpha="0.8"
+        android:textColor="#fff"
+        android:src="@drawable/ic_flash_off" />
+
+    <Button
+        android:id="@+id/zoom_in"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="208dp"
+        android:layout_marginEnd="15dp"
+        android:alpha="0.8"
+        android:background="@drawable/rounded_button"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:padding="20dp"
+        android:textColor="#fff"
+        android:text="+" />
+
+    <Button
+        android:id="@+id/zoom_out"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="278dp"
+        android:layout_marginEnd="15dp"
+        android:alpha="0.8"
+        android:background="@drawable/rounded_button"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:padding="20dp"
+        android:textColor="#fff"
+        android:text="–" />
+
 </RelativeLayout>
