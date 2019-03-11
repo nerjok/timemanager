@@ -101,7 +101,13 @@ public class MainActivity extends AppCompatActivity {
                 Intent i = new Intent(getBaseContext(), Main2Activity.class);
                 i.putExtra("PersonID", 12);
                 startActivity(i);
-
+            }
+        });
+        final Button bcgGps = findViewById(R.id.bcgGps);
+        bcgGps.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                LocationService.enqueueWork(getApplicationContext(), getIntent());
             }
         });
 

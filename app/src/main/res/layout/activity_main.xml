@@ -43,4 +43,13 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@+id/button_main" />
 
+    <Button
+        android:id="@+id/bcgGps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Background gps"
+        app:layout_constraintStart_toStartOf="@+id/btnScanBarcode"
+        app:layout_constraintTop_toBottomOf="@+id/btnScanBarcode" />
+
 </android.support.constraint.ConstraintLayout>
