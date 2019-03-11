@@ -1,6 +1,7 @@
 package com.worktimer.worktimer;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -66,9 +67,9 @@ public class MainActivity extends AppCompatActivity {
 
         locationManager=(LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
 
-        /*
-        Backgound gps
-         *//*
+
+        //Backgound gps
+
         final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
         this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
         /**/
@@ -107,7 +108,23 @@ public class MainActivity extends AppCompatActivity {
         bcgGps.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //LocationService.enqueueWork(getApplicationContext(), getIntent());
+
+                if ( ContextCompat.checkSelfPermission( getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ||
+                        ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                    if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+                        ActivityCompat.requestPermissions((Activity) getApplicationContext(),
+                                new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                                10);
+                    }
+                    if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+                        ActivityCompat.requestPermissions((Activity) getApplicationContext(),
+                                new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+                                11);
+                    }
+                }
+
+               // LocationService.enqueueWork(getApplicationContext(), getIntent());
             }
         });
 

@@ -25,11 +25,18 @@ public class LocationService extends JobIntentService
     public static final String TAG = "LocationListener";
     public static final String BROADCAST_ACTION = "Hello World";
     private static final int TWO_MINUTES = 1000 * 60 * 1;
+    static final int JOB_ID = 1000;
+
     public LocationManager locationManager;
 
     Context context;
     Intent intent;
     int counter = 0;
+
+    public LocationService() {
+        super();
+        Log.d(TAG, "LocationService: ");
+    }
 
     LocationListener locationListenerGPS = new LocationListener() {
         @Override
@@ -38,6 +45,8 @@ public class LocationService extends JobIntentService
             double latitude=location.getLatitude();
             double longitude=location.getLongitude();
             String msg="New Latitude: "+latitude + "New Longitude: "+longitude;
+            //Intent work = new Intent(context, LocationService.class);
+            //enqueueWork(context, LocationService.class, JOB_ID, work);
 
             Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
             //Toast.makeText(mContext, "", Toast.LENGTH_SHORT).show();.makeText(mContext,msg,Toast.LENGTH_LONG).show();
@@ -60,6 +69,10 @@ public class LocationService extends JobIntentService
     };
     @Override
     protected void onHandleWork(@NonNull Intent intent) {
+        Log.d(TAG, "onHandleWork: ");
+    }
+    public static void enqueueWork(Context context, Intent work) {
+        enqueueWork(context, LocationService.class, JOB_ID, work);
 
     }
 
@@ -73,6 +86,9 @@ public class LocationService extends JobIntentService
         if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 4000, 0, locationListenerGPS);
+            Log.d(TAG, "onCreate: listener set");
+        } else {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 10, locationListenerGPS);
         }
     }
 
