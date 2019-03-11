@@ -7,15 +7,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraManager;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.CursorLoader;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -26,8 +23,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-
-import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -67,16 +62,19 @@ public class MainActivity extends AppCompatActivity {
         mydb = new AppDatabase(getBaseContext());
 
         mContext=this;
-/*        locationManager=(LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
 
+
+        locationManager=(LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
 
         /*
         Backgound gps
          *//*
         final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
         this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
-/*
-        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+        /**/
+
+        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
                 ActivityCompat.requestPermissions(this,
@@ -111,17 +109,6 @@ public class MainActivity extends AppCompatActivity {
         cameraList.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                /*
-                String[] list = new String[] {"kuku"};
-                CameraManager cameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
-                try {
-                    list = cameraManager.getCameraIdList();
-                } catch (CameraAccessException e){
-                    e.printStackTrace();
-                }
-                Log.d(TAG, "onClick: camera list preview"+ Arrays.toString(list));
-*/
-
                 Intent i = new Intent(getBaseContext(), CameraActivity.class);
                 startActivity(i);
 
@@ -137,13 +124,22 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+       Button  btnScanBarcode = findViewById(R.id.btnScanBarcode);
+       btnScanBarcode.setOnClickListener(new View.OnClickListener() {
+           @Override
+           public void onClick(View view) {
+               startActivity(new Intent(MainActivity.this, ScannedBarcodeActivity.class));
+           }
+       });
     }
 
 
 
-    LocationListener locationListenerGPS=new LocationListener() {
+    LocationListener locationListenerGPS = new LocationListener() {
         @Override
         public void onLocationChanged(android.location.Location location) {
+            Log.d(TAG, "onLocationChanged: ");
             double latitude=location.getLatitude();
             double longitude=location.getLongitude();
             String msg="New Latitude: "+latitude + "New Longitude: "+longitude;
