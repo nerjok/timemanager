@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
         bcgGps.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                LocationService.enqueueWork(getApplicationContext(), getIntent());
+                //LocationService.enqueueWork(getApplicationContext(), getIntent());
             }
         });
 
