@@ -23,7 +23,11 @@ public class BackgroundService extends Service {
     private final String TAG = "BackgroundService";
     private LocationListener mLocationListener;
     private LocationManager mLocationManager;
+
+
     private NotificationManager notificationManager;
+    private static final String NOTIFICATION_CHANNEL_ID ="notification_channel_id";
+    private static final String NOTIFICATION_Service_CHANNEL_ID = "service_channel";
 
     private final int LOCATION_INTERVAL = 500;
     private final int LOCATION_DISTANCE = 10;
@@ -47,8 +51,8 @@ public class BackgroundService extends Service {
         @Override
         public void onLocationChanged(Location location)
         {
+            Log.d(TAG, "onLocationChanged: ");
             mLastLocation = location;
-            Log.i(TAG, "LocationChanged: "+location);
         }
 
         @Override
@@ -73,6 +77,7 @@ public class BackgroundService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
+        Log.d(TAG, "onStartCommand: ");
         super.onStartCommand(intent, flags, startId);
         return START_NOT_STICKY;
     }

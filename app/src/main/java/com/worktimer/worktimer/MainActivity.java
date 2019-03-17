@@ -28,48 +28,27 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
 
     public static final String TAG = "Main2Activity";
-    LocationManager locationManager;
     Context mContext;
 
     private AlertDialog mDialog = null;
     public AppDatabase mydb;
-
-    /**
-     * Test backgound services
-     */
-    private ServiceConnection serviceConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            String name = className.getClassName();
-            if (name.endsWith("BackgroundService")) {
-                Log.d(TAG, "onServiceConnected: ");
-                //gpsService = ((BackgroundService.LocationServiceBinder) service).getService();
-                //btnStartTracking.setEnabled(true);
-                //txtStatus.setText("GPS Ready");
-            }
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            if (className.getClassName().equals("BackgroundService")) {
-                Log.d(TAG, "onServiceDisconnected: ");
-                //gpsService = null;
-            }
-        }
-    };
+    private String gpsStatus = "StartService";
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         mydb = new AppDatabase(getBaseContext());
-
         mContext=this;
 
 
-        locationManager=(LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
-
-
         //Backgound gps
+        /*
+        Intent startIntent = new Intent(getApplicationContext(), LocationService.class);
+        startIntent.setAction("StartService");
+        ContextCompat.startForegroundService(this, startIntent);
 
+/*
         final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
         this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
         /**/
@@ -88,11 +67,11 @@ public class MainActivity extends AppCompatActivity {
                         11);
             }
         } else {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 10, locationListenerGPS);
-
+            Intent startIntent = new Intent(getApplicationContext(), LocationService.class);
+            startIntent.setAction("StartService");
+            ContextCompat.startForegroundService(this, startIntent);
         }
 
-/***/
 
         final Button button = findViewById(R.id.button_main);
         button.setOnClickListener(new View.OnClickListener() {
@@ -108,23 +87,14 @@ public class MainActivity extends AppCompatActivity {
         bcgGps.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-                if ( ContextCompat.checkSelfPermission( getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ||
-                        ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-                    if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
-                        ActivityCompat.requestPermissions((Activity) getApplicationContext(),
-                                new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                                10);
-                    }
-                    if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
-                        ActivityCompat.requestPermissions((Activity) getApplicationContext(),
-                                new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
-                                11);
-                    }
-                }
-
-               // LocationService.enqueueWork(getApplicationContext(), getIntent());
+                if (gpsStatus == "StartService") {
+                    gpsStatus = "StopService";
+                } else
+                    gpsStatus = "StartService";
+                Log.d(TAG, "onClick: " + gpsStatus);
+                Intent stopIntent = new Intent(getApplicationContext(), LocationService.class);
+                stopIntent.setAction(gpsStatus);
+                ContextCompat.startForegroundService(getApplicationContext(), stopIntent);
             }
         });
 
@@ -157,35 +127,6 @@ public class MainActivity extends AppCompatActivity {
        });
     }
 
-
-
-    LocationListener locationListenerGPS = new LocationListener() {
-        @Override
-        public void onLocationChanged(android.location.Location location) {
-            Log.d(TAG, "onLocationChanged: ");
-            double latitude=location.getLatitude();
-            double longitude=location.getLongitude();
-            String msg="New Latitude: "+latitude + "New Longitude: "+longitude;
-
-            Toast.makeText(mContext, msg, Toast.LENGTH_SHORT).show();
-            //Toast.makeText(mContext, "", Toast.LENGTH_SHORT).show();.makeText(mContext,msg,Toast.LENGTH_LONG).show();
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-
-        }
-    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -238,41 +179,6 @@ public class MainActivity extends AppCompatActivity {
         mDialog.show();
 
 
-    }
-
-
-    private void isLocationEnabled() {
-
-        if(!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
-            AlertDialog.Builder alertDialog=new AlertDialog.Builder(mContext);
-            alertDialog.setTitle("Enable Location");
-            alertDialog.setMessage("Your locations setting is not enabled. Please enabled it in settings menu.");
-            alertDialog.setPositiveButton("Location Settings", new DialogInterface.OnClickListener(){
-                public void onClick(DialogInterface dialog, int which){
-                    Intent intent=new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                    startActivity(intent);
-                }
-            });
-            alertDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener(){
-                public void onClick(DialogInterface dialog, int which){
-                    dialog.cancel();
-                }
-            });
-            AlertDialog alert=alertDialog.create();
-            alert.show();
-        }
-        else{
-            AlertDialog.Builder alertDialog=new AlertDialog.Builder(mContext);
-            alertDialog.setTitle("Confirm Location");
-            alertDialog.setMessage("Your Location is enabled, please enjoy");
-            alertDialog.setNegativeButton("Back to interface",new DialogInterface.OnClickListener(){
-                public void onClick(DialogInterface dialog, int which){
-                    dialog.cancel();
-                }
-            });
-            AlertDialog alert=alertDialog.create();
-            alert.show();
-        }
     }
 
 }
