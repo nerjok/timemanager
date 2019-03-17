@@ -29,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static final String TAG = "Main2Activity";
     Context mContext;
+    Activity activity;
 
     private AlertDialog mDialog = null;
     public AppDatabase mydb;
@@ -40,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
         mydb = new AppDatabase(getBaseContext());
         mContext=this;
+        activity = this;
 
 
         //Backgound gps
@@ -53,24 +55,6 @@ public class MainActivity extends AppCompatActivity {
         this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
         /**/
 
-        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                        10);
-            }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
-                ActivityCompat.requestPermissions(this,
-                        new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
-                        11);
-            }
-        } else {
-            Intent startIntent = new Intent(getApplicationContext(), LocationService.class);
-            startIntent.setAction("StartService");
-            ContextCompat.startForegroundService(this, startIntent);
-        }
 
 
         final Button button = findViewById(R.id.button_main);
@@ -92,9 +76,28 @@ public class MainActivity extends AppCompatActivity {
                 } else
                     gpsStatus = "StartService";
                 Log.d(TAG, "onClick: " + gpsStatus);
-                Intent stopIntent = new Intent(getApplicationContext(), LocationService.class);
-                stopIntent.setAction(gpsStatus);
-                ContextCompat.startForegroundService(getApplicationContext(), stopIntent);
+
+                if ( ContextCompat.checkSelfPermission( mContext, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ||
+                        ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                    if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+                        ActivityCompat.requestPermissions(activity,
+                                new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                                10);
+                    }
+                    if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+                        ActivityCompat.requestPermissions( activity,
+                                new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+                                11);
+                    }
+                } else {
+                    Intent stopIntent = new Intent(getApplicationContext(), LocationService.class);
+                    stopIntent.setAction(gpsStatus);
+                    ContextCompat.startForegroundService(getApplicationContext(), stopIntent);
+                }
+
+
+
             }
         });
 

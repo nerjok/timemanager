@@ -15,6 +15,7 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.JobIntentService;
@@ -99,16 +100,17 @@ public class LocationService extends JobIntentService
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand: ");
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
+        startForeground(121, getNotification());
 
             Log.d(TAG, "onStart: " + intent.getAction().toString());
             if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ||
                     ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 4000, 0, locationListenerGPS);
+                //locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 4000, 0, locationListenerGPS);
                 Log.d(TAG, "onCreate: listener set");
             } else {
-                startForeground(121, getNotification());
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 10, locationListenerGPS);
+                /* Check if gps is on*/
+                if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 10, locationListenerGPS);
 
             }
         if (intent.getAction().equals("StopService")) {
